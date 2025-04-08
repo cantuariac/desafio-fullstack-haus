@@ -7,17 +7,21 @@
 		<SpaRoot>..\desafiofullstackhaus.client</SpaRoot>
 		<SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
 		<SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
+		<UserSecretsId>c9d12c11-f9c1-4de4-ad17-244e0a96c064</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.14" />
 		<PackageReference Include="Microsoft.AspNetCore.SpaProxy">
 			<Version>8.*-*</Version>
 		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.3" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">

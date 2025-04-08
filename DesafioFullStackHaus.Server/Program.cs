@@ -1,4 +1,4 @@
-using DesafioFullStackHaus.Server.Data;
+using DesafioFullStackHaus.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,9 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddDbContext<DesafioHausDbContext>(options => options.UseNpgsql(connectionString: builder.Configuration.GetConnectionString("PostgresConnection")));
-builder.Services.AddAuthorization();
-builder.Services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<DesafioHausDbContext>();
+//builder.Services.ResolvePostgre(builder.Configuration.GetConnectionString("PostgresConnection"));
+builder.Services.ResolveSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
+builder.Services.ResolveConfigurations();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

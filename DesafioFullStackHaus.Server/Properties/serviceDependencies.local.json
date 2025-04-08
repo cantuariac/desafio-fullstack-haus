@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "secrets1": {
+      "type": "secrets.user"
+    },
+    "mssql2": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:SqlServerConnection2"
+    },
+    "mssql1": {
+      "serviceConnectorResourceId": "",
+      "secretStore": "LocalSecretsFile",
+      "resourceId": null,
+      "type": "mssql.local",
+      "connectionId": "ConnectionStrings:SqlServerConnection2"
+    }
+  }
+}
