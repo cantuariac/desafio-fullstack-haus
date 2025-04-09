@@ -6,6 +6,6 @@ namespace DesafioFullStackHaus.Server.Models
     {
         [StringLength(500)]
         public string Nome { get; set; }
-        //public ICollection<AcaoCausa> Acoes { get; set; }
+        public ICollection<AcaoCausa> Acoes { get; set; }
     }
 }

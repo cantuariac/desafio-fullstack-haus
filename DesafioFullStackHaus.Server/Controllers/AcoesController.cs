@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+
 using DesafioFullStackHaus.Server.Data;
 using DesafioFullStackHaus.Server.Models;
-using System.Net;
 
 namespace DesafioFullStackHaus.Server.Controllers
 {
@@ -15,25 +9,23 @@ namespace DesafioFullStackHaus.Server.Controllers
     [ApiController]
     public class AcoesController : ControllerBase
     {
-        protected readonly DesafioHausDbContext _context;
         protected readonly AcaoRepository _acaoRepository;
 
-        public AcoesController(DesafioHausDbContext context, AcaoRepository repository)
+        public AcoesController(AcaoRepository repository)
         {
-            _context = context;
             _acaoRepository = repository;
         }
 
         // GET: api/Acoes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Acao>>> GetAcoes()
+        public async Task<ActionResult<IEnumerable<AcaoDTO>>> GetAcoes()
         {
-            return await _acaoRepository.GetAll();
+            return Ok((await _acaoRepository.GetAll()).Select(a => new AcaoDTO(a)));
         }
 
         // GET: api/Acoes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Acao>> GetAcao(int id)
+        public async Task<ActionResult<AcaoDTO>> GetAcao(int id)
         {
             var acao = await _acaoRepository.Get(id);
 
@@ -42,45 +34,7 @@ namespace DesafioFullStackHaus.Server.Controllers
                 return NotFound();
             }
 
-            return acao;
-        }
-
-        // PUT: api/Acoes/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAcao(int id, AcaoDTO acaoDTO)
-        {
-            var acao = await _acaoRepository.Get(id);
-            if (acao == null)
-            {
-                return NotFound();
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            List<Causa> causas = await _acaoRepository.FindCausas(c => acaoDTO.Causas.Contains(c.Id));
-            if (!causas.Any())
-            {
-                return BadRequest(new { message = $"Causas com id {acaoDTO.Causas} não encontradas." });
-            }
-
-            Hierarquia? hierarquia = await _acaoRepository.GetHierarquia(acaoDTO.HierarquiaId);
-            if (hierarquia == null)
-            {
-                return BadRequest(new { message = $"Hierarquia com id {acaoDTO.HierarquiaId} não encontrada." });
-            }
-
-            acao.Descricao = acaoDTO.Descricao;
-            acao.Status = acaoDTO.Status;
-            acao.HierarquiaId = acaoDTO.HierarquiaId;
-            acao.Responsavel = acaoDTO.Responsavel;
-            acao.PrazoConclusao = acaoDTO.PrazoConclusao;
-
-            await _acaoRepository.Update(acao);
-
-            return NoContent();
+            return new AcaoDTO(acao);
         }
 
         // POST: api/Acoes
@@ -95,7 +49,7 @@ namespace DesafioFullStackHaus.Server.Controllers
             List<Causa> causas = await _acaoRepository.FindCausas(c => acaoDTO.Causas.Contains(c.Id));
             if (!causas.Any())
             {
-                return BadRequest(new { message = $"Causas com id {acaoDTO.Causas} não encontradas." });
+                return BadRequest(new { message = $"Causas com id fornecidos não encontradas." });
             }
 
             Hierarquia? hierarquia = await _acaoRepository.GetHierarquia(acaoDTO.HierarquiaId);
@@ -119,7 +73,45 @@ namespace DesafioFullStackHaus.Server.Controllers
             }
             await _acaoRepository.SaveChanges();
 
-            return CreatedAtAction("GetAcao", new { id = acao.Id }, acaoDTO);
+            return CreatedAtAction("GetAcao", new { id = acao.Id }, new AcaoDTO(acao));
+        }
+
+        // PUT: api/Acoes/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutAcao(int id, AcaoDTO acaoDTO)
+        {
+            var acao = await _acaoRepository.Get(id);
+            if (acao == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            List<Causa> causas = await _acaoRepository.FindCausas(c => acaoDTO.Causas.Contains(c.Id));
+            if (!causas.Any())
+            {
+                return BadRequest(new { message = $"Causas com id fornecidos não encontradas." });
+            }
+
+            Hierarquia? hierarquia = await _acaoRepository.GetHierarquia(acaoDTO.HierarquiaId);
+            if (hierarquia == null)
+            {
+                return BadRequest(new { message = $"Hierarquia com id {acaoDTO.HierarquiaId} não encontrada." });
+            }
+
+            acao.Descricao = acaoDTO.Descricao;
+            acao.Status = acaoDTO.Status;
+            acao.HierarquiaId = acaoDTO.HierarquiaId;
+            acao.Responsavel = acaoDTO.Responsavel;
+            acao.PrazoConclusao = acaoDTO.PrazoConclusao;
+
+            await _acaoRepository.Update(acao);
+
+            return NoContent();
         }
 
         // DELETE: api/Acoes/5
@@ -131,11 +123,6 @@ namespace DesafioFullStackHaus.Server.Controllers
                 return NotFound();
             }
             return NoContent();
-        }
-
-        private bool AcaoExists(int id)
-        {
-            return _acaoRepository.Exists(id);
         }
     }
 }

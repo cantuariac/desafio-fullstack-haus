@@ -1,6 +1,7 @@
-﻿using DesafioFullStackHaus.Server.Data;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
+using DesafioFullStackHaus.Server.Data;
 
 namespace DesafioFullStackHaus.Server
 {
@@ -8,10 +9,10 @@ namespace DesafioFullStackHaus.Server
     {
         public static IServiceCollection ResolveConfigurations(this IServiceCollection services)
         {
-
             services.AddAuthorization();
             services.AddIdentityApiEndpoints<IdentityUser>().AddEntityFrameworkStores<DesafioHausDbContext>();
             services.AddScoped<AcaoRepository>();
+            services.AddScoped<ValuesRepository>();
 
             return services;
         }

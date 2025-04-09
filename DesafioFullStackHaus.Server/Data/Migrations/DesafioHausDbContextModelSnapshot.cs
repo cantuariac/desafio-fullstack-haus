@@ -53,7 +53,7 @@ namespace DesafioFullStackHaus.Server.Migrations
 
                     b.HasIndex("HierarquiaId");
 
-                    b.ToTable("Acoes");
+                    b.ToTable("Acoes", (string)null);
                 });
 
             modelBuilder.Entity("DesafioFullStackHaus.Server.Models.AcaoCausa", b =>
@@ -68,7 +68,7 @@ namespace DesafioFullStackHaus.Server.Migrations
 
                     b.HasIndex("CausaId");
 
-                    b.ToTable("AcaoCausa");
+                    b.ToTable("AcaoCausa", (string)null);
                 });
 
             modelBuilder.Entity("DesafioFullStackHaus.Server.Models.Causa", b =>
@@ -86,7 +86,7 @@ namespace DesafioFullStackHaus.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Causas");
+                    b.ToTable("Causas", (string)null);
 
                     b.HasData(
                         new
@@ -121,7 +121,7 @@ namespace DesafioFullStackHaus.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Hierarquias");
+                    b.ToTable("Hierarquias", (string)null);
 
                     b.HasData(
                         new

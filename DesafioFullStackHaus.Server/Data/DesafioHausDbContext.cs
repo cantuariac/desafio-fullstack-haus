@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
 using DesafioFullStackHaus.Server.Models;
-using Microsoft.Extensions.Hosting;
 
 namespace DesafioFullStackHaus.Server.Data
 {
@@ -19,8 +19,10 @@ namespace DesafioFullStackHaus.Server.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<AcaoCausa>().HasKey(e => new { e.AcaoId, e.CausaId });
-            modelBuilder.Entity<Acao>().HasOne(e => e.Hierarquia);
-            modelBuilder.Entity<Acao>().HasMany(e => e.Causas);
+            modelBuilder.Entity<Acao>()
+                            .HasOne(e => e.Hierarquia);
+            modelBuilder.Entity<Acao>()
+                            .HasMany(e => e.Causas);
 
             modelBuilder.Entity<Causa>().HasData(new Causa { Id = 1, Nome = "Falha no treinamento" });
             modelBuilder.Entity<Causa>().HasData(new Causa { Id = 2, Nome = "Falha na mão de obra" });

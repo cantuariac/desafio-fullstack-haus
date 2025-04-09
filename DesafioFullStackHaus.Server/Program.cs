@@ -1,6 +1,7 @@
-using DesafioFullStackHaus.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+
+using DesafioFullStackHaus.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,7 +1,7 @@
-﻿using DesafioFullStackHaus.Server.Controllers;
-using DesafioFullStackHaus.Server.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+
+using DesafioFullStackHaus.Server.Models;
 
 namespace DesafioFullStackHaus.Server.Data
 {
@@ -14,14 +14,19 @@ namespace DesafioFullStackHaus.Server.Data
             Context = context;
         }
 
-        public async Task<List<Acao>> GetAll()
+        public async Task<IEnumerable<Acao>> GetAll()
         {
-            return await Context.Acoes.ToListAsync();
+            return await Context.Acoes
+                                .Include(e => e.Causas)
+                                .ToListAsync();
         }
 
         public async Task<Acao?> Get(int id)
         {
-            return await Context.Acoes.FindAsync(id);
+            return await Context.Acoes
+                                .Include(e => e.Causas)
+                                .Include(e => e.Hierarquia)
+                                .FirstOrDefaultAsync(e => e.Id == id);
         }
 
         public async Task<List<Acao>> Find(Expression<Func<Acao, bool>> predicate)
