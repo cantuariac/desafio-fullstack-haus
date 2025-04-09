@@ -16,14 +16,14 @@ namespace DesafioFullStackHaus.Server.Data
 
         public async Task<IEnumerable<Acao>> GetAll()
         {
-            return await Context.Acoes
+            return await Context.Acoes.AsNoTracking()
                                 .Include(e => e.Causas)
                                 .ToListAsync();
         }
 
         public async Task<Acao?> Get(int id)
         {
-            return await Context.Acoes
+            return await Context.Acoes.AsNoTracking()
                                 .Include(e => e.Causas)
                                 .Include(e => e.Hierarquia)
                                 .FirstOrDefaultAsync(e => e.Id == id);
@@ -31,7 +31,10 @@ namespace DesafioFullStackHaus.Server.Data
 
         public async Task<List<Acao>> Find(Expression<Func<Acao, bool>> predicate)
         {
-            return await Context.Acoes.AsNoTracking().Where(predicate).ToListAsync();
+            return await Context.Acoes.AsNoTracking()
+                                .Include(e => e.Causas)
+                                .Where(predicate)
+                                .ToListAsync();
         }
         public async Task<List<Causa>> FindCausas(Expression<Func<Causa, bool>> predicate)
         {

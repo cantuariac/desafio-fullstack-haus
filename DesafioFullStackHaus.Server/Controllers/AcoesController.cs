@@ -2,6 +2,7 @@
 
 using DesafioFullStackHaus.Server.Data;
 using DesafioFullStackHaus.Server.Models;
+using System.Collections.Generic;
 
 namespace DesafioFullStackHaus.Server.Controllers
 {
@@ -18,9 +19,19 @@ namespace DesafioFullStackHaus.Server.Controllers
 
         // GET: api/Acoes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AcaoDTO>>> GetAcoes()
+        public async Task<ActionResult<IEnumerable<AcaoDTO>>> GetAcoes(string? q)
         {
-            return Ok((await _acaoRepository.GetAll()).Select(a => new AcaoDTO(a)));
+            IEnumerable<Acao> result;
+            if (q is null)
+            {
+                result = await _acaoRepository.GetAll();
+            }
+            else
+            {
+                result = await _acaoRepository.Find(a => a.Descricao.Contains(q) ||
+                                                         a.Hierarquia.Nome.Contains(q));
+            }
+            return Ok(result.Select(a => new AcaoDTO(a)));
         }
 
         // GET: api/Acoes/5
@@ -105,9 +116,10 @@ namespace DesafioFullStackHaus.Server.Controllers
 
             acao.Descricao = acaoDTO.Descricao;
             acao.Status = acaoDTO.Status;
-            acao.HierarquiaId = acaoDTO.HierarquiaId;
+            //acao.HierarquiaId = acaoDTO.HierarquiaId;
             acao.Responsavel = acaoDTO.Responsavel;
             acao.PrazoConclusao = acaoDTO.PrazoConclusao;
+            acao.Hierarquia = hierarquia;
 
             await _acaoRepository.Update(acao);
 
