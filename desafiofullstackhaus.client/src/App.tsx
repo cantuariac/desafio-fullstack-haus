@@ -1,38 +1,59 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 
-interface Forecast {
-    date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
+enum StatusAcao {
+    Aberto,
+    EmProgresso,
+    Concluida
+}
+
+interface Acao {
+    id: number;
+    descricao: string;
+    responsavel: string;
+    prazoConclusao: string;
+    status: StatusAcao;
+    hierarquia: number;
+    causas: number[];
+}
+interface StaticData {
+    hierarquias: { [key: number]: string };
+    causas: { [key: number]: string };
 }
 
 function App() {
-    const [forecasts, setForecasts] = useState<Forecast[]>();
+    const [acoes, setAcoes] = useState<Acao[]>();
+    const [staticData, setStaticData] = useState<StaticData>();
 
     useEffect(() => {
-        populateWeatherData();
+        loadStaticData();
     }, []);
+    useEffect(() => {
+        loadAcoesData();
+    }, [staticData]);
 
-    const contents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
+    const contents = acoes === undefined
+        ? <p><em>Carregando dados...</em></p>
         : <table className="table table-striped" aria-labelledby="tableLabel">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
+                    <th>Descrição</th>
+                    <th>Responsável</th>
+                    <th>Prazo de Conclusão</th>
+                    <th>Status</th>
+                    <th>Hierarquia de controle</th>
+                    <th>Causas</th>
                 </tr>
             </thead>
             <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
+                {acoes.map(acao =>
+                    <tr key={acao.id}>
+                        <td>{acao.descricao}</td>
+                        <td>{acao.responsavel}</td>
+                        <td>{acao.prazoConclusao}</td>
+                        <td>{acao.status.toString()}</td>
+                        <td>{acao.hierarquia}</td>
+                        <td>{acao.causas}</td>
                     </tr>
                 )}
             </tbody>
@@ -40,16 +61,48 @@ function App() {
 
     return (
         <div>
-            <h1 id="tableLabel">Weather forecast</h1>
-            <p>This component demonstrates fetching data from the server.</p>
+            <h1 id="tableLabel">Plano de ação</h1>
             {contents}
         </div>
     );
 
-    async function populateWeatherData() {
-        const response = await fetch('weatherforecast');
-        const data = await response.json();
-        setForecasts(data);
+    async function loadStaticData() {
+        try {
+            const staticData: StaticData = {
+                hierarquias: {}, causas: {}
+            };
+
+            let data: { id: number, nome: string }[];
+            let response = await fetch('https://localhost:7050/api/values/causas', {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            data = await response.json();
+            for (let i = 0; i < data.length; i++) {
+                staticData.causas[data[i]["id"]] = data[i]["nome"];
+            }
+
+            response = await fetch('https://localhost:7050/api/values/hierarquias');
+            data = await response.json();
+            for (let i = 0; i < data.length; i++) {
+                staticData.hierarquias[data[i]["id"]] = data[i]["nome"];
+            }
+
+            setStaticData(staticData);
+        } catch (error) {
+            console.error(`Haus App: ${error}`);
+        }
+    }
+    async function loadAcoesData() {
+        try {
+            const response = await fetch('https://localhost:7050/api/acoes');
+            const data: Acao[] = await response.json();
+            setAcoes(data);
+        } catch (error) {
+            console.error(`Haus App: ${error}`);
+        }
     }
 }
 

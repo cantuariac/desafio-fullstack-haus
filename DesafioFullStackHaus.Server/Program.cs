@@ -10,6 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.Services.ResolvePostgre(builder.Configuration.GetConnectionString("PostgresConnection"));
 builder.Services.ResolveSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
 builder.Services.ResolveConfigurations();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        policy =>
+        {
+            policy.WithOrigins("https://localhost:5173").AllowAnyHeader();
+        });
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -31,6 +39,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
