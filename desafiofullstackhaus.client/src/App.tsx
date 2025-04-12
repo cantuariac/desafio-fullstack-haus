@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+Ôªøimport { useEffect, useState } from 'react';
 import './App.css';
 
 enum StatusAcao {
     Aberto,
     EmProgresso,
-    Concluida
+    Concluida,
+    'Em Progresso' = EmProgresso,
+    'Conclu√≠da' = Concluida,
 }
 
 interface Acao {
@@ -13,7 +15,7 @@ interface Acao {
     responsavel: string;
     prazoConclusao: string;
     status: StatusAcao;
-    hierarquia: number;
+    hierarquiaId: number;
     causas: number[];
 }
 interface StaticData {
@@ -30,16 +32,16 @@ function App() {
     }, []);
     useEffect(() => {
         loadAcoesData();
-    }, [staticData]);
+    }, []);
 
     const contents = acoes === undefined
         ? <p><em>Carregando dados...</em></p>
         : <table className="table table-striped" aria-labelledby="tableLabel">
             <thead>
                 <tr>
-                    <th>DescriÁ„o</th>
-                    <th>Respons·vel</th>
-                    <th>Prazo de Conclus„o</th>
+                    <th>Descri√ß√£o</th>
+                    <th>Respons√°vel</th>
+                    <th>Prazo de Conclus√£o</th>
                     <th>Status</th>
                     <th>Hierarquia de controle</th>
                     <th>Causas</th>
@@ -51,8 +53,8 @@ function App() {
                         <td>{acao.descricao}</td>
                         <td>{acao.responsavel}</td>
                         <td>{acao.prazoConclusao}</td>
-                        <td>{acao.status.toString()}</td>
-                        <td>{acao.hierarquia}</td>
+                        <td>{StatusAcao[acao.status]}</td>
+                        <td>{staticData?.hierarquias[acao.hierarquiaId]}</td>
                         <td>{acao.causas}</td>
                     </tr>
                 )}
@@ -61,7 +63,8 @@ function App() {
 
     return (
         <div>
-            <h1 id="tableLabel">Plano de aÁ„o</h1>
+            <h1 id="tableLabel">Plano de a√ß√£o</h1>
+            <input id="search_input"></input>
             {contents}
         </div>
     );
@@ -73,11 +76,7 @@ function App() {
             };
 
             let data: { id: number, nome: string }[];
-            let response = await fetch('https://localhost:7050/api/values/causas', {
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
+            let response = await fetch('https://localhost:7050/api/values/causas');
 
             data = await response.json();
             for (let i = 0; i < data.length; i++) {
@@ -91,6 +90,7 @@ function App() {
             }
 
             setStaticData(staticData);
+            console.info(`Haus App: Static data loaded`);
         } catch (error) {
             console.error(`Haus App: ${error}`);
         }
@@ -100,6 +100,7 @@ function App() {
             const response = await fetch('https://localhost:7050/api/acoes');
             const data: Acao[] = await response.json();
             setAcoes(data);
+            console.info(`Haus App: Acoes data loaded`);
         } catch (error) {
             console.error(`Haus App: ${error}`);
         }
