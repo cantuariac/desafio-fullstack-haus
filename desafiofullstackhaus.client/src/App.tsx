@@ -1,110 +1,133 @@
-﻿import { useEffect, useState } from 'react';
-import './App.css';
+﻿import { useState, useEffect } from "react";
+import { AppShell, Group, MantineProvider, TextInput, Title, Select, Stack, Button, Container, Grid, ScrollArea, Text, Card, Loader, Pill, Center } from "@mantine/core";
+import { IconCalendar, IconPlus } from '@tabler/icons-react';
+import "@mantine/core/styles.css";
 
-enum StatusAcao {
-    Aberto,
-    EmProgresso,
-    Concluida,
-    'Em Progresso' = EmProgresso,
-    'Concluída' = Concluida,
-}
+import { theme } from "./theme";
+import { HausAPI, PlanoAcao, StaticData } from "./models";
 
-interface Acao {
-    id: number;
-    descricao: string;
-    responsavel: string;
-    prazoConclusao: string;
-    status: StatusAcao;
-    hierarquiaId: number;
-    causas: number[];
-}
-interface StaticData {
-    hierarquias: { [key: number]: string };
-    causas: { [key: number]: string };
-}
+export default function App() {
 
-function App() {
-    const [acoes, setAcoes] = useState<Acao[]>();
     const [staticData, setStaticData] = useState<StaticData>();
+    const [acoes, setAcoes] = useState<PlanoAcao>();
+
+    const [queryValue, setQueryValue] = useState('');
 
     useEffect(() => {
-        loadStaticData();
+        async function loadStatic() {
+            const data = await HausAPI.fetchStaticData();
+            setStaticData(data);
+        }
+        loadStatic();
     }, []);
     useEffect(() => {
-        loadAcoesData();
-    }, []);
-
-    const contents = acoes === undefined
-        ? <p><em>Carregando dados...</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>Descrição</th>
-                    <th>Responsável</th>
-                    <th>Prazo de Conclusão</th>
-                    <th>Status</th>
-                    <th>Hierarquia de controle</th>
-                    <th>Causas</th>
-                </tr>
-            </thead>
-            <tbody>
-                {acoes.map(acao =>
-                    <tr key={acao.id}>
-                        <td>{acao.descricao}</td>
-                        <td>{acao.responsavel}</td>
-                        <td>{acao.prazoConclusao}</td>
-                        <td>{StatusAcao[acao.status]}</td>
-                        <td>{staticData?.hierarquias[acao.hierarquiaId]}</td>
-                        <td>{acao.causas}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
+        async function loadAcoes() {
+            const data = await HausAPI.fetchAcoesData(queryValue);
+            setAcoes(data);
+        }
+        loadAcoes();
+    }, [queryValue]);
 
     return (
-        <div>
-            <h1 id="tableLabel">Plano de ação</h1>
-            <input id="search_input"></input>
-            {contents}
-        </div>
+        <MantineProvider theme={theme}>
+            <Container fluid={true}
+                //style={{ width: '100%' }}
+                bg='var(--mantine-color-blue-light)'>
+                <AppShell w="1200px"
+                    padding="md"
+                    navbar={{
+                        width: 80,
+                        breakpoint: 'sm',
+                    }}>
+
+                    <AppShell.Navbar p="md">Navbar</AppShell.Navbar>
+
+                    <AppShell.Main>
+                        <Stack>
+                            <Group justify="space-between">
+                                <Title order={3}>Plano de ação</Title>
+                                <Button leftSection={<IconPlus size={20} />} >Nova ação</Button>
+                            </Group>
+
+                            <Group justify="space-between">
+                                <TextInput
+                                    placeholder="Buscar ação"
+                                    value={queryValue}
+                                    onChange={(event) => setQueryValue(event.currentTarget.value)} />
+                                <Group>
+                                    <Select
+                                        placeholder="Data"
+                                        data={['Das mais recentes para antigas', 'Das mais antigas para recentes']} />
+                                    <Select
+                                        placeholder="Hierarquia"
+                                        data={staticData === undefined ? [] :
+                                            Object.keys(staticData.hierarquias).map(
+                                                (id) => ({ value: id, label: staticData.hierarquias[parseInt(id)] })
+                                            )} />
+                                </Group>
+                            </Group>
+
+                            <Board />
+
+                        </Stack>
+                    </AppShell.Main>
+                </AppShell>
+            </Container>
+        </MantineProvider>
     );
-
-    async function loadStaticData() {
-        try {
-            const staticData: StaticData = {
-                hierarquias: {}, causas: {}
-            };
-
-            let data: { id: number, nome: string }[];
-            let response = await fetch('https://localhost:7050/api/values/causas');
-
-            data = await response.json();
-            for (let i = 0; i < data.length; i++) {
-                staticData.causas[data[i]["id"]] = data[i]["nome"];
-            }
-
-            response = await fetch('https://localhost:7050/api/values/hierarquias');
-            data = await response.json();
-            for (let i = 0; i < data.length; i++) {
-                staticData.hierarquias[data[i]["id"]] = data[i]["nome"];
-            }
-
-            setStaticData(staticData);
-            console.info(`Haus App: Static data loaded`);
-        } catch (error) {
-            console.error(`Haus App: ${error}`);
-        }
+    function dayMonth(date: Date) {
+        return `${date.getDate()}/${date.getMonth()}`
     }
-    async function loadAcoesData() {
-        try {
-            const response = await fetch('https://localhost:7050/api/acoes');
-            const data: Acao[] = await response.json();
-            setAcoes(data);
-            console.info(`Haus App: Acoes data loaded`);
-        } catch (error) {
-            console.error(`Haus App: ${error}`);
-        }
+    function Board() {
+        return ((acoes === undefined || staticData === undefined) ?
+            <Center><Loader color="blue" /></Center> :
+            <Grid justify="center" align="flex-start">
+                <Grid.Col span={4}>
+                    <Text>Aberto</Text>
+                    <ScrollArea>
+                        {acoes.abertos.map(acao =>
+                            <AcaoCard
+                                hierarquia={staticData.hierarquias[acao.id]}
+                                descricao={acao.descricao}
+                                responsavel={acao.responsavel}
+                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                    </ScrollArea>
+                </Grid.Col>
+                <Grid.Col span={4}>
+                    <Text>Em progresso</Text>
+                    <ScrollArea>
+                        {acoes.emProgresso.map(acao =>
+                            <AcaoCard
+                                hierarquia={staticData.hierarquias[acao.id]}
+                                descricao={acao.descricao}
+                                responsavel={acao.responsavel}
+                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                    </ScrollArea>
+               </Grid.Col>
+                <Grid.Col span={4}>
+                    <Text>Concluído</Text>
+                    <ScrollArea>
+                        {acoes.concluido.map(acao =>
+                            <AcaoCard
+                                hierarquia={staticData.hierarquias[acao.id]}
+                                descricao={acao.descricao}
+                                responsavel={acao.responsavel}
+                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                    </ScrollArea>
+               </Grid.Col>
+            </Grid>
+        );
+    }
+    function AcaoCard({ hierarquia, descricao, responsavel, prazoConclusao }) {
+        return (
+            <Card>
+                <Card.Section><Pill>{hierarquia}</Pill></Card.Section>
+                <Card.Section><Text>{descricao}</Text></Card.Section>
+                <Card.Section><Group justify="space-between">
+                    <Text>{responsavel}</Text>
+                    <Group><IconCalendar /><Text>{prazoConclusao}</Text></Group>
+                </Group></Card.Section>
+            </Card>
+        );
     }
 }
-
-export default App;
