@@ -3,6 +3,7 @@
 using DesafioFullStackHaus.Server.Data;
 using DesafioFullStackHaus.Server.Models;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace DesafioFullStackHaus.Server.Controllers
 {
@@ -19,17 +20,22 @@ namespace DesafioFullStackHaus.Server.Controllers
 
         // GET: api/Acoes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AcaoDTO>>> GetAcoes(string? q)
+        public async Task<ActionResult<IEnumerable<AcaoDTO>>> GetAcoes(string? q, int? hierarquia)
         {
             IEnumerable<Acao> result;
-            if (q is null)
+            if (q is null && hierarquia == null)
             {
                 result = await _acaoRepository.GetAll();
             }
             else
             {
-                result = await _acaoRepository.Find(a => a.Descricao.Contains(q) ||
-                                                         a.Hierarquia.Nome.Contains(q));
+                Expression<Func<Acao, bool>> expr = (q, hierarquia) switch
+                {
+                    (_, null) => a => a.Descricao.Contains(q) || a.Hierarquia.Nome.Contains(q),
+                    (null, _) => a => a.HierarquiaId == hierarquia,
+                    (_, _) => a => (a.Descricao.Contains(q) || a.Hierarquia.Nome.Contains(q)) && a.HierarquiaId == hierarquia
+                };
+                result = await _acaoRepository.Find(expr);
             }
             return Ok(result.Select(a => new AcaoDTO(a)));
         }

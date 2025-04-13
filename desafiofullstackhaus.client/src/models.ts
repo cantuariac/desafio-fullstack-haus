@@ -21,10 +21,12 @@ export class PlanoAcao {
     abertos: Acao[];
     emProgresso: Acao[];
     concluido: Acao[];
+    atrasados: Acao[];
     constructor() {
         this.abertos = [];
         this.emProgresso = [];
         this.concluido = [];
+        this.atrasados = [];
     }
 }
 export class StaticData {
@@ -39,9 +41,7 @@ export class StaticData {
 export abstract class HausAPI {
     public static async fetchStaticData() {
         try {
-            const staticData: StaticData = {
-                hierarquias: {}, causas: {}
-            };
+            const staticData = new StaticData();
 
             let data: { id: number, nome: string }[];
             let response = await fetch('https://localhost:7050/api/values/causas');
@@ -63,23 +63,20 @@ export abstract class HausAPI {
             console.error(`Haus App: ${error}`);
         }
     }
-    public static async fetchAcoesData(q='') {
+    public static async fetchAcoesData(q = '', hierarquia=null) {
         try {
-            const response = await fetch('https://localhost:7050/api/acoes' + (q == null ? '' : `?q=${q}`));
+            const url = 'https://localhost:7050/api/acoes?' +
+                (q == null || q == '' ? '' : `&q=${q}`) +
+                (hierarquia == null ? '' : `&hierarquia=${hierarquia}`)
+            const response = await fetch(url);
             const data: Acao[] = await response.json();
-            const plano = new PlanoAcao();
+
             for (let i = 0; i < data.length; i++) {
                 data[i].prazoConclusao = new Date(data[i].prazoConclusao);
-                if (data[i].status == 0) {
-                    plano.abertos.push(data[i]);
-                } else if (data[i].status == 1) {
-                    plano.emProgresso.push(data[i]);
-                } else if (data[i].status == 2) {
-                    plano.concluido.push(data[i]);
-                }
             }
-            console.info(`Haus App: Acoes data loaded`);
-            return plano;
+
+            console.info(`Haus App: Acoes data loaded from ${url}`);
+            return data;
         } catch (error) {
             console.error(`Haus App: ${error}`);
         }

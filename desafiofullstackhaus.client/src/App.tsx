@@ -12,6 +12,8 @@ export default function App() {
     const [acoes, setAcoes] = useState<PlanoAcao>();
 
     const [queryValue, setQueryValue] = useState('');
+    const [hierarquiaFilter, setHierarquiaFilter] = useState();
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function loadStatic() {
@@ -22,18 +24,36 @@ export default function App() {
     }, []);
     useEffect(() => {
         async function loadAcoes() {
-            const data = await HausAPI.fetchAcoesData(queryValue);
-            setAcoes(data);
+            setLoading(true);
+            let data = await HausAPI.fetchAcoesData(queryValue, hierarquiaFilter);
+            if (data === undefined) {
+                data = [];
+            }
+
+            const plano = new PlanoAcao();
+            const today = new Date();
+            for (let i = 0; i < data.length; i++) {
+                if (data[i].status == 2) {
+                    plano.concluido.push(data[i]);
+                } else if (data[i].prazoConclusao < today) {
+                    plano.atrasados.push(data[i]);
+                } else if (data[i].status == 0) {
+                    plano.abertos.push(data[i]);
+                } else if (data[i].status == 1) {
+                    plano.emProgresso.push(data[i]);
+                }
+            }
+            setAcoes(plano);
+            setLoading(false);
         }
         loadAcoes();
-    }, [queryValue]);
+    }, [queryValue, hierarquiaFilter]);
 
     return (
         <MantineProvider theme={theme}>
             <Container fluid={true}
-                //style={{ width: '100%' }}
-                bg='var(--mantine-color-blue-light)'>
-                <AppShell w="1200px"
+                bg='#F8F8F8'>
+                <AppShell w="1280px" h="720px"
                     padding="md"
                     navbar={{
                         width: 80,
@@ -46,7 +66,7 @@ export default function App() {
                         <Stack>
                             <Group justify="space-between">
                                 <Title order={3}>Plano de ação</Title>
-                                <Button leftSection={<IconPlus size={20} />} >Nova ação</Button>
+                                <Button variant="filled" radius="xl" leftSection={<IconPlus size={20} />} >Nova ação</Button>
                             </Group>
 
                             <Group justify="space-between">
@@ -63,7 +83,9 @@ export default function App() {
                                         data={staticData === undefined ? [] :
                                             Object.keys(staticData.hierarquias).map(
                                                 (id) => ({ value: id, label: staticData.hierarquias[parseInt(id)] })
-                                            )} />
+                                            )}
+                                        value={hierarquiaFilter}
+                                        onChange={(event) => setHierarquiaFilter(event)} />
                                 </Group>
                             </Group>
 
@@ -76,45 +98,56 @@ export default function App() {
         </MantineProvider>
     );
     function dayMonth(date: Date) {
-        return `${date.getDate()}/${date.getMonth()}`
+        return `${date.getDate()}/${date.getMonth() + 1}`
     }
     function Board() {
-        return ((acoes === undefined || staticData === undefined) ?
+        return ((loading || acoes === undefined || staticData === undefined) ?
             <Center><Loader color="blue" /></Center> :
             <Grid justify="center" align="flex-start">
-                <Grid.Col span={4}>
-                    <Text>Aberto</Text>
+                <Grid.Col span={3}>
+                    <Text bg='#F0F0F0B2'>Aberto {acoes.abertos.length}</Text>
                     <ScrollArea>
                         {acoes.abertos.map(acao =>
                             <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.id]}
+                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
                                 descricao={acao.descricao}
                                 responsavel={acao.responsavel}
                                 prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
                     </ScrollArea>
                 </Grid.Col>
-                <Grid.Col span={4}>
-                    <Text>Em progresso</Text>
+                <Grid.Col span={3}>
+                    <Text bg='#F0F0F0B2'>Em progresso {acoes.emProgresso.length}</Text>
                     <ScrollArea>
                         {acoes.emProgresso.map(acao =>
                             <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.id]}
+                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
                                 descricao={acao.descricao}
                                 responsavel={acao.responsavel}
                                 prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
                     </ScrollArea>
-               </Grid.Col>
-                <Grid.Col span={4}>
-                    <Text>Concluído</Text>
+                </Grid.Col>
+                <Grid.Col span={3}>
+                    <Text bg='#F0F0F0B2'>Concluído {acoes.concluido.length}</Text>
                     <ScrollArea>
                         {acoes.concluido.map(acao =>
                             <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.id]}
+                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
                                 descricao={acao.descricao}
                                 responsavel={acao.responsavel}
                                 prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
                     </ScrollArea>
-               </Grid.Col>
+                </Grid.Col>
+                <Grid.Col span={3}>
+                    <Text bg='#F0F0F0B2'>Atrasado {acoes.atrasados.length}</Text>
+                    <ScrollArea>
+                        {acoes.atrasados.map(acao =>
+                            <AcaoCard
+                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
+                                descricao={acao.descricao}
+                                responsavel={acao.responsavel}
+                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                    </ScrollArea>
+                </Grid.Col>
             </Grid>
         );
     }
