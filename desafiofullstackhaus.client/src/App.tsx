@@ -32,32 +32,34 @@ export default function App() {
         }
         loadStatic();
     }, []);
-    useEffect(() => {
-        async function loadAcoes() {
-            setLoading(true);
-            let data = await HausAPI.fetchAcoesData(queryValue, hierarquiaFilter);
-            if (data === undefined) {
-                data = [];
-            }
 
-            const plano = new PlanoAcao();
-            const today = new Date();
-            for (let i = 0; i < data.length; i++) {
-                if (data[i].status == 2) {
-                    plano.concluido.push(data[i]);
-                } else if (data[i].prazoConclusao < today) {
-                    plano.atrasados.push(data[i]);
-                } else if (data[i].status == 0) {
-                    plano.abertos.push(data[i]);
-                } else if (data[i].status == 1) {
-                    plano.emProgresso.push(data[i]);
-                }
-            }
-            setAcoes(plano);
-            setLoading(false);
-        }
+    useEffect(() => {
         loadAcoes();
     }, [queryValue, hierarquiaFilter]);
+
+    async function loadAcoes() {
+        setLoading(true);
+        let data = await HausAPI.fetchAcoesData(queryValue, hierarquiaFilter);
+        if (data === undefined) {
+            data = [];
+        }
+
+        const plano = new PlanoAcao();
+        const today = new Date();
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].status == 2) {
+                plano.concluido.push(data[i]);
+            } else if (data[i].prazoConclusao < today) {
+                plano.atrasados.push(data[i]);
+            } else if (data[i].status == 0) {
+                plano.abertos.push(data[i]);
+            } else if (data[i].status == 1) {
+                plano.emProgresso.push(data[i]);
+            }
+        }
+        setAcoes(plano);
+        setLoading(false);
+    }
 
     return (
         <MantineProvider theme={theme}>
@@ -190,13 +192,13 @@ export default function App() {
             transformValues: (values) => ({
                 ...values,
                 hierarquiaId: Number(values.hierarquiaId),
-                status: Number(StatusAcao[values.status])
+                status: Number(values.status)
             }),
 
             validate: {
                 descricao: (value: string) => value == '' ? "O campo descrição é obrigatório" : null,
                 responsavel: (value) => value == '' ? "O campo responsável é obrigatório" : null,
-                //prazoConclusao: (value) => value == '' ? "A data de conclusão é obrigatória" : null,
+                prazoConclusao: (value) => value == '' ? "A data de conclusão é obrigatória" : null,
                 hierarquiaId: (value) => value == null ? "O hierarquia de controle é obrigatório" : null,
                 causas: (value) => value.length < 1 ? "A ação dever ter ao menos uma causa" : null,
             },
@@ -206,9 +208,9 @@ export default function App() {
                 <Modal opened={opened} onClose={close} size="xl" withCloseButton={false}>
                     <form onSubmit={form.onSubmit(async (values) => {
                         console.log(values);
-                        const [ok, data] = await HausAPI.createAcao(values);
-                        if (ok) { close(); }
-                        else { alert(data); }
+                        await HausAPI.createAcao(values);
+                        close();
+                        loadAcoes();
                     })}>
                         <Group justify="space-between">
                             <Title order={2}>Ação</Title>
@@ -217,7 +219,6 @@ export default function App() {
                                 <Button type="submit" radius="xl">Salvar</Button>
                             </Group>
                         </Group>
-                        {/*<Group justify="space-evenly" align="start">*/}
 
                         <Grid justify="center" align="flex-start">
                             <Grid.Col span={6}>
@@ -278,14 +279,13 @@ export default function App() {
                                             { value: "1", label: "Em Progresso" },
                                             { value: "2", label: "Concluída" }
                                         ]}
-                                        defaultValue={"1"}
+                                        value={"0"}
                                         allowDeselect={false}
                                         key={form.key('status')}
                                         {...form.getInputProps('status')} />
                                 </Stack>
                             </Grid.Col>
                         </Grid >
-                        {/*</Group>*/}
                     </form>
                 </Modal>
             </>

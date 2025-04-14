@@ -96,10 +96,12 @@ export abstract class HausAPI {
             });
             const data = await response.json();
             if (response.ok) {
-                console.info(`Haus App: Acao created`);
+                console.info(`Haus App: Acao created:${data}`);
+            }
+            else {
+                throw new Error(data.title);
             }
 
-            return [response.ok, data];
         } catch (error) {
             console.error(`Haus App: ${error}`);
         }
