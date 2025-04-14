@@ -1,6 +1,6 @@
 
 export enum StatusAcao {
-    Aberto,
+    Aberta,
     EmProgresso,
     Concluida,
     'Em Progresso' = EmProgresso,
@@ -39,6 +39,8 @@ export class StaticData {
 }
 
 export abstract class HausAPI {
+    private static url = "https://localhost:7050/api";
+
     public static async fetchStaticData() {
         try {
             const staticData = new StaticData();
@@ -63,7 +65,8 @@ export abstract class HausAPI {
             console.error(`Haus App: ${error}`);
         }
     }
-    public static async fetchAcoesData(q = '', hierarquia=null) {
+
+    public static async fetchAcoesData(q = '', hierarquia = null) {
         try {
             const url = 'https://localhost:7050/api/acoes?' +
                 (q == null || q == '' ? '' : `&q=${q}`) +
@@ -77,6 +80,26 @@ export abstract class HausAPI {
 
             console.info(`Haus App: Acoes data loaded from ${url}`);
             return data;
+        } catch (error) {
+            console.error(`Haus App: ${error}`);
+        }
+    }
+
+    public static async createAcao(acao: object) {
+        try {
+            const response = await fetch(HausAPI.url + "/acoes", {
+                "method": "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                "body": JSON.stringify(acao)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                console.info(`Haus App: Acao created`);
+            }
+
+            return [response.ok, data];
         } catch (error) {
             console.error(`Haus App: ${error}`);
         }

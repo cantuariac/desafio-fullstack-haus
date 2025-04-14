@@ -1,10 +1,18 @@
 ﻿import { useState, useEffect } from "react";
-import { AppShell, Group, MantineProvider, TextInput, Title, Select, Stack, Button, Container, Grid, ScrollArea, Text, Card, Loader, Pill, Center } from "@mantine/core";
+import {
+    AppShell, Group, MantineProvider, TextInput, Title, Select, Stack, Button,
+    Container, Grid, ScrollArea, Text, Card, Loader, Pill, Center, Modal,
+    Checkbox
+} from "@mantine/core";
+import { DateInput, DateTimePicker } from '@mantine/dates';
+import { useForm } from '@mantine/form';
+import { useDisclosure } from "@mantine/hooks";
 import { IconCalendar, IconPlus } from '@tabler/icons-react';
 import "@mantine/core/styles.css";
+import '@mantine/dates/styles.css';
 
 import { theme } from "./theme";
-import { HausAPI, PlanoAcao, StaticData } from "./models";
+import { HausAPI, PlanoAcao, StaticData, StatusAcao } from "./models";
 
 export default function App() {
 
@@ -14,6 +22,8 @@ export default function App() {
     const [queryValue, setQueryValue] = useState('');
     const [hierarquiaFilter, setHierarquiaFilter] = useState();
     const [loading, setLoading] = useState(true);
+
+    const [opened, { open, close }] = useDisclosure(false);
 
     useEffect(() => {
         async function loadStatic() {
@@ -53,7 +63,7 @@ export default function App() {
         <MantineProvider theme={theme}>
             <Container fluid={true}
                 bg='#F8F8F8'>
-                <AppShell w="1280px" h="720px"
+                <AppShell
                     padding="md"
                     navbar={{
                         width: 80,
@@ -66,7 +76,7 @@ export default function App() {
                         <Stack>
                             <Group justify="space-between">
                                 <Title order={3}>Plano de ação</Title>
-                                <Button variant="filled" radius="xl" leftSection={<IconPlus size={20} />} >Nova ação</Button>
+                                <Button variant="filled" radius="xl" leftSection={<IconPlus size={20} />} onClick={open}>Nova ação</Button>
                             </Group>
 
                             <Group justify="space-between">
@@ -90,6 +100,8 @@ export default function App() {
                             </Group>
 
                             <Board />
+
+                            <AcaoForm />
 
                         </Stack>
                     </AppShell.Main>
@@ -153,7 +165,7 @@ export default function App() {
     }
     function AcaoCard({ hierarquia, descricao, responsavel, prazoConclusao }) {
         return (
-            <Card>
+            <Card padding="sm" radius="sm">
                 <Card.Section><Pill>{hierarquia}</Pill></Card.Section>
                 <Card.Section><Text>{descricao}</Text></Card.Section>
                 <Card.Section><Group justify="space-between">
@@ -161,6 +173,122 @@ export default function App() {
                     <Group><IconCalendar /><Text>{prazoConclusao}</Text></Group>
                 </Group></Card.Section>
             </Card>
+        );
+    }
+    function AcaoForm() {
+        const form = useForm({
+            mode: 'uncontrolled',
+            initialValues: {
+                descricao: '',
+                responsavel: '',
+                prazoConclusao: (new Date()).toISOString(),
+                hierarquiaId: null,
+                status: 0,
+                causas: [],
+            },
+
+            transformValues: (values) => ({
+                ...values,
+                hierarquiaId: Number(values.hierarquiaId),
+                status: Number(StatusAcao[values.status])
+            }),
+
+            validate: {
+                descricao: (value: string) => value == '' ? "O campo descrição é obrigatório" : null,
+                responsavel: (value) => value == '' ? "O campo responsável é obrigatório" : null,
+                //prazoConclusao: (value) => value == '' ? "A data de conclusão é obrigatória" : null,
+                hierarquiaId: (value) => value == null ? "O hierarquia de controle é obrigatório" : null,
+                causas: (value) => value.length < 1 ? "A ação dever ter ao menos uma causa" : null,
+            },
+        });
+        return (staticData === undefined ? <></> :
+            <>
+                <Modal opened={opened} onClose={close} size="xl" withCloseButton={false}>
+                    <form onSubmit={form.onSubmit(async (values) => {
+                        console.log(values);
+                        const [ok, data] = await HausAPI.createAcao(values);
+                        if (ok) { close(); }
+                        else { alert(data); }
+                    })}>
+                        <Group justify="space-between">
+                            <Title order={2}>Ação</Title>
+                            <Group justify="flex-end" mt="md">
+                                <Button type="button" radius="xl" onClick={close}>Cancelar</Button>
+                                <Button type="submit" radius="xl">Salvar</Button>
+                            </Group>
+                        </Group>
+                        {/*<Group justify="space-evenly" align="start">*/}
+
+                        <Grid justify="center" align="flex-start">
+                            <Grid.Col span={6}>
+                                <Checkbox.Group
+                                    label="Vincular causas para essa ação"
+                                    withAsterisk
+                                    key={form.key('causas')}
+                                    {...form.getInputProps('causas')}
+                                >
+                                    <Stack mt="xs">
+                                        {Object.keys(staticData.causas).map((id) =>
+                                            <Checkbox value={id} label={staticData.causas[parseInt(id)]} />)}
+                                    </Stack>
+                                </Checkbox.Group>
+                            </Grid.Col>
+
+                            <Grid.Col span={6}>
+                                <Stack>
+                                    <TextInput
+                                        withAsterisk
+                                        label="Descrição"
+                                        placeholder="Digite aqui a descrição da ação"
+                                        key={form.key('descricao')}
+                                        {...form.getInputProps('descricao')}
+                                    />
+                                    <TextInput
+                                        withAsterisk
+                                        label="Responsável"
+                                        placeholder="Digite o nome completo"
+                                        key={form.key('responsavel')}
+                                        {...form.getInputProps('responsavel')}
+                                    />
+                                    <TextInput
+                                        withAsterisk
+                                        label="Data de conclusão"
+                                        key={form.key('prazoConclusao')}
+                                        {...form.getInputProps('prazoConclusao')}
+                                    />
+                                    {/*<DateTimePicker */}
+                                    {/*    withAsterisk*/}
+                                    {/*    label="Data de conclusão"*/}
+                                    {/*    key={form.key('prazoConclusao')}*/}
+                                    {/*    {...form.getInputProps('prazoConclusao')}*/}
+                                    {/*/>*/}
+                                    <Select
+                                        withAsterisk
+                                        label="Hierarquia de controle"
+                                        data={Object.keys(staticData.hierarquias).map(
+                                            (id) => ({ value: id, label: staticData.hierarquias[parseInt(id)] })
+                                        )}
+                                        key={form.key('hierarquiaId')}
+                                        {...form.getInputProps('hierarquiaId')} />
+                                    <Select
+                                        withAsterisk
+                                        label="Status"
+                                        data={[
+                                            { value: "0", label: "Aberta" },
+                                            { value: "1", label: "Em Progresso" },
+                                            { value: "2", label: "Concluída" }
+                                        ]}
+                                        defaultValue={"1"}
+                                        allowDeselect={false}
+                                        key={form.key('status')}
+                                        {...form.getInputProps('status')} />
+                                </Stack>
+                            </Grid.Col>
+                        </Grid >
+                        {/*</Group>*/}
+                    </form>
+                </Modal>
+            </>
         );
     }
 }
