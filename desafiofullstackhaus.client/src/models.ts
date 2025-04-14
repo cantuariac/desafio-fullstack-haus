@@ -8,7 +8,7 @@ export enum StatusAcao {
 }
 
 export interface Acao {
-    id: number;
+    id: number | null;
     descricao: string;
     responsavel: string;
     prazoConclusao: Date;
@@ -78,7 +78,7 @@ export abstract class HausAPI {
                 data[i].prazoConclusao = new Date(data[i].prazoConclusao);
             }
 
-            console.info(`Haus App: Acoes data loaded from ${url}`);
+            console.info(`Haus App: Acoes data loaded`);
             return data;
         } catch (error) {
             console.error(`Haus App: ${error}`);
@@ -94,12 +94,33 @@ export abstract class HausAPI {
                 },
                 "body": JSON.stringify(acao)
             });
-            const data = await response.json();
+            //const data = await response.json();
             if (response.ok) {
-                console.info(`Haus App: Acao created:${data}`);
+                console.info(`Haus App: Acao created`);
             }
             else {
-                throw new Error(data.title);
+                throw new Error(response.statusText);
+            }
+
+        } catch (error) {
+            console.error(`Haus App: ${error}`);
+        }
+    }
+    public static async updateAcao(id: number, acao: object) {
+        try {
+            const response = await fetch(HausAPI.url + `/acoes/${id}`, {
+                "method": "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                "body": JSON.stringify(acao)
+            });
+            //const data = await response.json();
+            if (response.ok) {
+                console.info(`Haus App: Acao updated`);
+            }
+            else {
+                throw new Error(response.statusText);
             }
 
         } catch (error) {

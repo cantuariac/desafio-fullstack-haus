@@ -7,12 +7,12 @@ import {
 import { DateInput, DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from "@mantine/hooks";
-import { IconCalendar, IconPlus } from '@tabler/icons-react';
+import { IconCalendarWeek, IconPlus } from '@tabler/icons-react';
 import "@mantine/core/styles.css";
 import '@mantine/dates/styles.css';
 
 import { theme } from "./theme";
-import { HausAPI, PlanoAcao, StaticData, StatusAcao } from "./models";
+import { Acao, HausAPI, PlanoAcao, StaticData, StatusAcao } from "./models";
 
 export default function App() {
 
@@ -61,6 +61,34 @@ export default function App() {
         setLoading(false);
     }
 
+    const form = useForm({
+        mode: 'uncontrolled',
+        initialValues: {
+            id: null,
+            descricao: '',
+            responsavel: '',
+            prazoConclusao: (new Date()).toISOString(),
+            hierarquiaId: 0,
+            status: 0,
+            causas: [],
+        },
+
+        transformValues: (values) => ({
+            ...values,
+            hierarquiaId: Number(values.hierarquiaId),
+            status: Number(values.status),
+            causas: values.causas.map((c) => Number(c))
+        }),
+
+        validate: {
+            descricao: (value: string) => value == '' ? "O campo descrição é obrigatório" : null,
+            responsavel: (value) => value == '' ? "O campo responsável é obrigatório" : null,
+            //prazoConclusao: (value) => value == '' ? "A data de conclusão é obrigatória" : null,
+            hierarquiaId: (value) => value == null ? "O hierarquia de controle é obrigatório" : null,
+            causas: (value) => value.length < 1 ? "A ação dever ter ao menos uma causa" : null,
+        },
+    });
+
     return (
         <MantineProvider theme={theme}>
             <Container fluid={true}
@@ -78,7 +106,22 @@ export default function App() {
                         <Stack>
                             <Group justify="space-between">
                                 <Title order={3}>Plano de ação</Title>
-                                <Button variant="filled" radius="xl" leftSection={<IconPlus size={20} />} onClick={open}>Nova ação</Button>
+                                <Button variant="filled" radius="xl"
+                                    leftSection={<IconPlus size={20} />}
+                                    onClick={(event) => {
+                                        form.setValues({
+                                            id: null,
+                                            descricao: '',
+                                            responsavel: '',
+                                            prazoConclusao: (new Date()).toISOString(),
+                                            hierarquiaId: undefined,
+                                            status: '0',
+                                            causas: [],
+                                        });
+                                        open();
+                                    }}>
+                                    Nova ação
+                                </Button>
                             </Group>
 
                             <Group justify="space-between">
@@ -119,96 +162,75 @@ export default function App() {
             <Center><Loader color="blue" /></Center> :
             <Grid justify="center" align="flex-start">
                 <Grid.Col span={3}>
-                    <Text bg='#F0F0F0B2'>Aberto {acoes.abertos.length}</Text>
+                    <Text size="xl" bg='#F0F0F0B2'>Aberto {acoes.abertos.length}</Text>
                     <ScrollArea>
-                        {acoes.abertos.map(acao =>
-                            <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
-                                descricao={acao.descricao}
-                                responsavel={acao.responsavel}
-                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                        <Stack>
+                            {acoes.abertos.map(acao => <AcaoCard acao={acao} />)}
+                        </Stack>
                     </ScrollArea>
                 </Grid.Col>
                 <Grid.Col span={3}>
-                    <Text bg='#F0F0F0B2'>Em progresso {acoes.emProgresso.length}</Text>
+                    <Text size="xl" bg='#F0F0F0B2'>Em progresso {acoes.emProgresso.length}</Text>
                     <ScrollArea>
-                        {acoes.emProgresso.map(acao =>
-                            <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
-                                descricao={acao.descricao}
-                                responsavel={acao.responsavel}
-                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                        <Stack>
+                            {acoes.emProgresso.map(acao => <AcaoCard acao={acao} />)}
+                        </Stack>
                     </ScrollArea>
                 </Grid.Col>
                 <Grid.Col span={3}>
-                    <Text bg='#F0F0F0B2'>Concluído {acoes.concluido.length}</Text>
+                    <Text size="xl" bg='#F0F0F0B2'>Concluído {acoes.concluido.length}</Text>
                     <ScrollArea>
-                        {acoes.concluido.map(acao =>
-                            <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
-                                descricao={acao.descricao}
-                                responsavel={acao.responsavel}
-                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                        <Stack>
+                            {acoes.concluido.map(acao => <AcaoCard acao={acao} />)}
+                        </Stack>
                     </ScrollArea>
                 </Grid.Col>
                 <Grid.Col span={3}>
-                    <Text bg='#F0F0F0B2'>Atrasado {acoes.atrasados.length}</Text>
+                    <Text size="xl" bg='#F0F0F0B2'>Atrasado {acoes.atrasados.length}</Text>
                     <ScrollArea>
-                        {acoes.atrasados.map(acao =>
-                            <AcaoCard
-                                hierarquia={staticData.hierarquias[acao.hierarquiaId]}
-                                descricao={acao.descricao}
-                                responsavel={acao.responsavel}
-                                prazoConclusao={dayMonth(acao.prazoConclusao)} />)}
+                        <Stack>
+                            {acoes.atrasados.map(acao => <AcaoCard acao={acao} />)}
+                        </Stack>
                     </ScrollArea>
                 </Grid.Col>
             </Grid>
         );
     }
-    function AcaoCard({ hierarquia, descricao, responsavel, prazoConclusao }) {
-        return (
-            <Card padding="sm" radius="sm">
-                <Card.Section><Pill>{hierarquia}</Pill></Card.Section>
-                <Card.Section><Text>{descricao}</Text></Card.Section>
+    function AcaoCard({ acao }: { acao: Acao }) {
+        return (staticData === undefined ? <></> :
+            <Card padding="sm" radius="lg"
+                onClick={(event) => {
+                    form.setValues({
+                        ...acao,
+                        prazoConclusao: acao.prazoConclusao.toISOString(),
+                        hierarquiaId: acao.hierarquiaId.toString(),
+                        status: acao.status.toString(),
+                        causas: acao.causas.map((id) => id.toString()),
+                    });
+                    open();
+                }}>
+                <Card.Section><Pill bg="blue">{staticData.hierarquias[acao.hierarquiaId]}</Pill></Card.Section>
+                <Card.Section><Text>{acao.descricao}</Text></Card.Section>
                 <Card.Section><Group justify="space-between">
-                    <Text>{responsavel}</Text>
-                    <Group><IconCalendar /><Text>{prazoConclusao}</Text></Group>
+                    <Text>{acao.responsavel}</Text>
+                    <Group><IconCalendarWeek /><Text>{dayMonth(acao.prazoConclusao)}</Text></Group>
                 </Group></Card.Section>
             </Card>
         );
     }
     function AcaoForm() {
-        const form = useForm({
-            mode: 'uncontrolled',
-            initialValues: {
-                descricao: '',
-                responsavel: '',
-                prazoConclusao: (new Date()).toISOString(),
-                hierarquiaId: null,
-                status: 0,
-                causas: [],
-            },
-
-            transformValues: (values) => ({
-                ...values,
-                hierarquiaId: Number(values.hierarquiaId),
-                status: Number(values.status)
-            }),
-
-            validate: {
-                descricao: (value: string) => value == '' ? "O campo descrição é obrigatório" : null,
-                responsavel: (value) => value == '' ? "O campo responsável é obrigatório" : null,
-                prazoConclusao: (value) => value == '' ? "A data de conclusão é obrigatória" : null,
-                hierarquiaId: (value) => value == null ? "O hierarquia de controle é obrigatório" : null,
-                causas: (value) => value.length < 1 ? "A ação dever ter ao menos uma causa" : null,
-            },
-        });
         return (staticData === undefined ? <></> :
             <>
                 <Modal opened={opened} onClose={close} size="xl" withCloseButton={false}>
                     <form onSubmit={form.onSubmit(async (values) => {
-                        console.log(values);
-                        await HausAPI.createAcao(values);
+                        console.log(JSON.stringify(values));
+                        if (values.id == null) {
+                            delete values.id;
+                            await HausAPI.createAcao(values);
+                        }
+                        else {
+                            await HausAPI.updateAcao(values.id, values);
+                        }
                         close();
                         loadAcoes();
                     })}>
@@ -279,7 +301,6 @@ export default function App() {
                                             { value: "1", label: "Em Progresso" },
                                             { value: "2", label: "Concluída" }
                                         ]}
-                                        value={"0"}
                                         allowDeselect={false}
                                         key={form.key('status')}
                                         {...form.getInputProps('status')} />
