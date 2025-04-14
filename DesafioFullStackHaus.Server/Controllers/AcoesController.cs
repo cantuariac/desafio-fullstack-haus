@@ -122,7 +122,6 @@ namespace DesafioFullStackHaus.Server.Controllers
 
             acao.Descricao = acaoDTO.Descricao;
             acao.Status = acaoDTO.Status;
-            //acao.HierarquiaId = acaoDTO.HierarquiaId;
             acao.Responsavel = acaoDTO.Responsavel;
             acao.PrazoConclusao = acaoDTO.PrazoConclusao;
             acao.Hierarquia = hierarquia;
