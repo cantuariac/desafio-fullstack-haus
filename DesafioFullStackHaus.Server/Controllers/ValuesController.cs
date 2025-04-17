@@ -15,13 +15,13 @@ namespace DesafioFullStackHaus.Server.Controllers
         {
             _valuesRepository = repository;
         }
-        // GET: api/Acoes
+        // GET: api/Values/Causas
         [HttpGet("[action]")]
         public async Task<ActionResult<IEnumerable<Causa>>> Causas()
         {
             return (await _valuesRepository.GetCausas()).ToList();
         }
-        // GET: api/Acoes
+        // GET: api/Values/Hierarquias
         [HttpGet("[action]")]
         public async Task<ActionResult<IEnumerable<Hierarquia>>> Hierarquias()
         {

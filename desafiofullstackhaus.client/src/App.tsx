@@ -4,7 +4,7 @@ import {
     Container, Grid, ScrollArea, Text, Card, Loader, Pill, Center, Modal,
     Checkbox
 } from "@mantine/core";
-import { DateInput, DateTimePicker } from '@mantine/dates';
+//import { DateInput, DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from "@mantine/hooks";
 import { IconCalendarWeek, IconPlus } from '@tabler/icons-react';
@@ -12,7 +12,7 @@ import "@mantine/core/styles.css";
 import '@mantine/dates/styles.css';
 
 import { theme } from "./theme";
-import { Acao, HausAPI, PlanoAcao, StaticData, StatusAcao } from "./models";
+import { Acao, HausAPI, PlanoAcao, StaticData } from "./models";
 
 export default function App() {
 
@@ -108,7 +108,7 @@ export default function App() {
                                 <Title order={3}>Plano de ação</Title>
                                 <Button variant="filled" radius="xl"
                                     leftSection={<IconPlus size={20} />}
-                                    onClick={(event) => {
+                                    onClick={() => {
                                         form.setValues({
                                             id: null,
                                             descricao: '',
@@ -198,7 +198,7 @@ export default function App() {
     }
     function AcaoCard({ acao }: { acao: Acao }) {
         return (staticData === undefined ? <></> :
-            <Card padding="sm" radius="lg"
+            <Card padding="lg" radius="md"
                 onClick={(event) => {
                     form.setValues({
                         ...acao,
